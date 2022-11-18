@@ -84,15 +84,35 @@ def create_app(test_config=None):
                             'categories':formatted_categories
                         })
     """
-    @TODO:
+    @DONE:
     Create an endpoint to DELETE question using a question ID.
 
     TEST: When you click the trash icon next to a question, the question will be removed.
     This removal will persist in the database and when you refresh the page.
     """
-    
+    # Delete Question End Point
+    @app.route("/questions/<int:question_id>", methods = ["DELETE"])
+    def delete_question(question_id):
+        try:
+            # Select question to be deleted with id or return none
+            question = Question.query.filter(Question.id == question_id).one_or_none()
+            if question is None:
+                abort(404)
+            
+            # delete selected question    
+            question.delete()
+            selection = Question.query.order_by(Question.id).all()
+            current_questions = paginate_questions(request, selection)
+            return jsonify({
+                            'success':True,
+                            'deleted':question_id,
+                            'questions':current_questions,
+                            'total_questions':len(Question.query.all())
+                        })
+        except:
+            abort(404)
     """
-    @TODO:
+    @DONE:
     Create an endpoint to POST a new question,
     which will require the question and answer text,
     category, and difficulty score.
@@ -101,7 +121,36 @@ def create_app(test_config=None):
     the form will clear and the question will appear at the end of the last page
     of the questions list in the "List" tab.
     """
+    @app.route("/questions", methods=["POST"])
+    def create_question():
+        body = request.get_json()
 
+        new_question = body.get("question", None)
+        new_answer   = body.get("answer", None)
+        new_category = body.get("category", None)
+        new_difficulty = body.get("difficulty", None)
+        
+        try:
+            question = Question(question = new_question,answer=new_answer,category=new_category,difficulty=new_difficulty)
+            
+            if "difficulty" in body:
+                    question.difficulty = int(body.get("difficulty"))
+                    question.insert()
+                
+            selection = Question.query.order_by(Question.id).all()
+            categories = Category.query.all()
+            current_questions = paginate_questions(request, selection)
+            formatted_categories = {category.id: category.type for category in categories}
+
+            return jsonify({
+                            'success':True,
+                            'questions':current_questions,
+                            'total_questions':len(Question.query.all()),
+                            'current_category':'',
+                            'categories':formatted_categories
+                        })
+        except:
+            abort(422)
     """
     @TODO:
     Create a POST endpoint to get questions based on a search term.

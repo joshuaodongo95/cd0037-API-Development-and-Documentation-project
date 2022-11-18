@@ -20,6 +20,8 @@ class TriviaTestCase(unittest.TestCase):
     
         setup_db(self.app, self.database_path)
 
+        self.new_question = {"question": "Which country is the fifa 2022 world cup host?","answer":"Qatar","category":6,"difficulty":3}
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -83,7 +85,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data["questions"]))
         self.assertEqual(question, None)
 
-    # Test question exists
+    # Test if question exists
 
     def test_422_if_question_does_not_exist(self):
         res = self.client().delete("books/1000")
@@ -92,6 +94,25 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code,422)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "unprocessable")
+
+    # Test Create question
+    def test_create_question(self):
+        res = self.client().post("/questions",json=self.new_question)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["created"])
+        self.assertTrue(len(data["questions"]))
+
+    # Test question book creation not allowed
+    def test_405_if_question_creation_not_allowed(self):
+        res = self.client().post("/questions/35",json=self.new_question)
+        data =json.loads(res.data)
+
+        self.assertEqual(res.status_code,405)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"],"Method not allowed")
 
 
 
