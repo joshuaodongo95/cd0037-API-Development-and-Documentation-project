@@ -152,7 +152,7 @@ def create_app(test_config=None):
         except:
             abort(422)
     """
-    @TODO:
+    @DONE:
     Create a POST endpoint to get questions based on a search term.
     It should return any questions for whom the search term
     is a substring of the question.
@@ -161,9 +161,31 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
+    @app.route('/questions',methods=['POST'])
+    def search_questions():
+        body = request.get_json()
+        search = body.get("search",None)
+        try:
+            if search:
 
+                selection = Question.query.order_by(Question.id).filter(Question.question.ilike("%{}%".format(search)))
+
+                categories = Category.query.all()
+                current_questions = paginate_questions(request, selection)
+                formatted_categories = {category.id: category.type for category in categories}
+
+                return jsonify({
+                                'success':True,
+                                'questions':current_questions,
+                                'total_questions':len(Question.query.all()),
+                                'current_category':'',
+                                'categories':formatted_categories
+                            })
+        except:
+            print(sys.exc_info)
+            abort(404)
     """
-    @TODO:
+    @DONE:
     Create a GET endpoint to get questions based on category.
 
     TEST: In the "List" tab / main screen, clicking on one of the
@@ -186,7 +208,7 @@ def create_app(test_config=None):
                         'categories':formatted_categories
                         })
     """
-    @TODO:
+    @DONE:
     Create a POST endpoint to get questions to play the quiz.
     This endpoint should take category and previous question parameters
     and return a random questions within the given category,
@@ -196,12 +218,68 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
+    @app.route('/quizzes',methods=['POST'])
+    def play_quiz():
+    
+        #get the request body
+        body = request.get_json()
+        previous_questions = body.get("previous_questions",None)
+        category = body.get("quiz_category",None)
+        
+        print("Previous Questions are : " + str(previous_questions))
+        print("Selected Category is : " + str(category['id']))
 
+        previous_questions_list =[]
+        try:
+            if category['id']==0:
+                questions = Question.query.filter(Question.id.notin_(previous_questions)).all()
+                next_question = random.choice(questions).format()
+
+                next_question_id = next_question['id']
+                previous_questions_list.append(next_question_id)
+                print(previous_questions_list)
+            else:
+                questions = Question.query.filter(Question.id.notin_(previous_questions)).filter(Question.category==category['id']).all()
+                next_question = random.choice(questions).format()
+                next_question_id = next_question['id']
+                previous_questions_list.append(next_question_id)
+                print(previous_questions_list)
+                
+            return jsonify({
+                             'success':True,
+                             'question':next_question
+                         })
+        except:
+            return jsonify({
+                'success':True
+            }) 
+            abort(422) 
     """
-    @TODO:
+    @DONE:
     Create error handlers for all expected errors
     including 404 and 422.
     """
+    @app.errorhandler(404)
+    def not_found(error):
+        return (
+            jsonify({"success": False, "error": 404, "message": "resource not found"}),
+            404,
+        )
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return (
+            jsonify({"success": False, "error": 422, "message": "unprocessable"}),
+            422,
+        )
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({"success": False, "error": 400, "message": "bad request"}), 400
+    
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return jsonify({"success": False, "error": 405, "message": "method not allowed"}), 405
 
     return app
 

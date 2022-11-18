@@ -69,6 +69,14 @@ class TriviaTestCase(unittest.TestCase):
          self.assertEqual(res.status_code,200)
          self.assertEqual(data["success"],True)
          self.assertTrue(data["categories"])
+    # Test get category which does not exist
+    def test_404_get_category(self):
+        res = self.client().get('/categories/1000')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code,404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "resource not found")
     
     # Test delete question
 
@@ -128,6 +136,25 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["current_category"],3)
         self.assertTrue(data["categories"])
 
+    # Test search questions with results 
+    def test_search_question_with_results(self):
+        res = self.client().post("/questions", json={"search": "title"})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertEqual(len(data["questions"]))
+        self.assertEqual(data["total_questions"])
+
+    #test search questions without results
+    def test_search_question_without_results(self):
+        res = self.client().post("/questions", json={"search": "mangoes"})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertEqual(data["total_questions"], 0)
+        self.assertEqual(len(data["questions"]), 0)
 
 
 # Make the tests conveniently executable
