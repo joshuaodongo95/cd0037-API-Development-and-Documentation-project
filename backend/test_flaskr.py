@@ -81,7 +81,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code,200)
         self.assertEqual(data["success"],True)
         self.assertEqual(data["deleted"],2)
-        self.assertEqual(data['total_questions'])
+        self.assertEqual(data["total_questions"])
         self.assertTrue(len(data["questions"]))
         self.assertEqual(question, None)
 
@@ -105,7 +105,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["created"])
         self.assertTrue(len(data["questions"]))
 
-    # Test question book creation not allowed
+    # Test question creation not allowed
     def test_405_if_question_creation_not_allowed(self):
         res = self.client().post("/questions/35",json=self.new_question)
         data =json.loads(res.data)
@@ -113,6 +113,20 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code,405)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"],"Method not allowed")
+
+    # Test get question by category
+    def test_get_question_by_category(self):
+        res = self.client().post("/categories/3/questions")
+        data =json.loads(res.data)
+
+        question = Question.query.filter(Question.category == 3).all()
+
+        self.assertEqual(res.status_code,200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(len(data["questions"]))
+        self.assertEqual(len(data["question"]))
+        self.assertTrue(data["current_category"],3)
+        self.assertTrue(data["categories"])
 
 
 
